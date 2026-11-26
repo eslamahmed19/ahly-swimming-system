@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النادي الأهلي - نظام إدارة السباحين</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        document.documentElement.dataset.theme = localStorage.getItem('ahlyTheme') || 'light';
+    </script>
+</head>
+<body>
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع"></button>
+
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <img src="Al_Ahly_SC_logo.svg" alt="شعار النادي الأهلي">
+            <h2>النادي الأهلي</h2>
+            <p>نظام إدارة السباحين</p>
+            <div class="form-group">
+                <input type="text" id="loginUser" placeholder="اسم المستخدم (admin أو رقم السباح)">
+            </div>
+            <div class="form-group">
+                <input type="password" id="loginPass" placeholder="كلمة المرور (1234)">
+            </div>
+            <button onclick="login()" class="btn btn-primary full">دخول</button>
+            <p class="login-hint">
+                المدرب: admin / 1234<br>
+                السباح: رقمه / 1234
+            </p>
+        </div>
+    </div>
+
+    <div id="mainApp" hidden>
+        <header class="header">
+            <img src="Al_Ahly_SC_logo.svg" alt="شعار النادي الأهلي">
+            <h1 id="appTitle">النادي الأهلي</h1>
+            <p>نظام إدارة السباحين</p>
+            <small id="userInfo"></small>
+        </header>
+
+        <nav class="nav">
+            <button onclick="showSection('dashboard')" class="active" id="nav-dashboard">الرئيسية</button>
+            <button onclick="showSection('swimmers')" id="nav-swimmers">السباحين</button>
+            <button onclick="showSection('championships')" id="nav-championships">البطولات</button>
+            <button onclick="showSection('stats')" id="nav-stats">الإحصائيات</button>
+            <button onclick="logout()" class="logout">خروج</button>
+        </nav>
+
+        <main class="container">
+            <section id="dashboard" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card"><h3 id="statTotal">0</h3><p>إجمالي السباحين</p></div>
+                    <div class="stat-card"><h3 id="statBest">--</h3><p>أفضل وقت 50م</p></div>
+                    <div class="stat-card"><h3 id="statChamps">0</h3><p>البطولات</p></div>
+                </div>
+                <div class="card">
+                    <h2>📈 أحدث النتائج</h2>
+                    <div id="recentResults"></div>
+                </div>
+            </section>
+
+            <section id="swimmers" class="section">
+                <div class="card">
+                    <div class="card-top">
+                        <h2>🏊‍♂️ السباحين</h2>
+                        <button onclick="openAddModal()" class="btn btn-primary" id="btnAdd">➕ إضافة سباح</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="🔍 بحث باسم السباح..." onkeyup="searchSwimmers()">
+                    </div>
+                    <div class="swimmers-grid" id="swimmersList"></div>
+                </div>
+            </section>
+
+            <section id="championships" class="section">
+                <div class="card">
+                    <h2>🏆 البطولات</h2>
+                    <div id="championshipsList"></div>
+                </div>
+            </section>
+
+            <section id="stats" class="section">
+                <div class="stats-grid" id="statsSummary"></div>
+                <div class="card">
+                    <h2>🏅 أفضل وقت لكل مسافة</h2>
+                    <div id="statsBest"></div>
+                </div>
+                <div class="card">
+                    <h2>🚀 الأكثر تطوراً</h2>
+                    <div id="statsImproved"></div>
+                </div>
+                <div class="card">
+                    <h2>📈 تطور السباحين</h2>
+                    <div id="statsProgress"></div>
+                </div>
+            </section>
+        </main>
+
+        <div id="swimmerModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">إضافة سباح جديد</h2>
+                    <button class="close" onclick="closeModal()">&times;</button>
+                </div>
+                <form onsubmit="saveSwimmer(event)">
+                    <input type="hidden" id="swimmerId">
+                    <div class="photo-upload">
+                        <div class="photo-preview" id="photoPreview">📷</div>
+                        <input type="file" id="swimmerPhoto" accept="image/*" onchange="previewPhoto(event)" hidden>
+                        <label for="swimmerPhoto" class="btn btn-primary">اختر صورة</label>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>الاسم الكامل *</label>
+                            <input type="text" id="swName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>المدرسة *</label>
+                            <input type="text" id="swSchool" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>المرحلة</label>
+                            <select id="swGrade">
+                                <option>أولى ثانوي</option>
+                                <option>ثانية ثانوي</option>
+                                <option>ثالثة ثانوي</option>
+                                <option>أولى جامعة</option>
+                                <option>ثانية جامعة</option>
+                                <option>ثالثة جامعة</option>
+                                <option>رابعة جامعة</option>
+                                <option>خريج </option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>تخصص السباحة *</label>
+                            <select id="swSpecialty" required>
+                                <option value="">اختر التخصص...</option>
+                                <option value="breast">صدر (Breaststroke)</option>
+                                <option value="butterfly">دولفين (Butterfly)</option>
+                                <option value="freestyle">حرة (Freestyle)</option>
+                                <option value="back">ظهر (Backstroke)</option>
+                                <option value="im">متنوع (Individual Medley)</option>
+                                <option value="freestyle-back">حرة وظهر</option>
+                                <option value="freestyle-butterfly">حرة ودولفين</option>
+                                <option value="freestyle-breast">حرة وصدر</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="champ-block">
+                        <h3>🏆 إضافة نتائج البطولات</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>اسم البطولة *</label>
+                                <input type="text" id="champName" placeholder="مثال: بطولة القاهرة الصيفية" list="champNamesList">
+                                <datalist id="champNamesList">
+                                    <option value="بطولة القاهرة الصيفية">
+                                    <option value="بطولة القاهرة الشتوية">
+                                    <option value="كأس مصر">
+                                    <option value="بطولة الجمهورية">
+                                    <option value="بطولة النادي الأهلي">
+                                    <option value="بطولة المنطقة">
+                                </datalist>
+                            </div>
+                            <div class="form-group">
+                                <label>السنة *</label>
+                                <input type="number" id="champYear" placeholder="2024" min="2020" max="2030" value="2024">
+                            </div>
+                            <div class="form-group">
+                                <label>تاريخ السباق</label>
+                                <input type="date" id="champDate">
+                            </div>
+                        </div>
+
+                        <div class="race-form">
+                            <h4>➕ إضافة سباق للبطولة</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>نوع العومة *</label>
+                                    <select id="raceStroke">
+                                        <option value="">اختر...</option>
+                                        <option value="freestyle">حرة (Freestyle)</option>
+                                        <option value="back">ظهر (Backstroke)</option>
+                                        <option value="breast">صدر (Breaststroke)</option>
+                                        <option value="butterfly">دلفين (Butterfly)</option>
+                                        <option value="im">متنوع (IM)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>المسافة *</label>
+                                    <select id="raceDistance">
+                                        <option value="">اختر...</option>
+                                        <option value="50">50 متر</option>
+                                        <option value="100">100 متر</option>
+                                        <option value="200">200 متر</option>
+                                        <option value="400">400 متر</option>
+                                        <option value="800">800 متر</option>
+                                        <option value="1500">1500 متر</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>الوقت (ثانية) *</label>
+                                    <input type="number" step="0.01" id="raceTime" placeholder="28.50">
+                                </div>
+                                <div class="form-group">
+                                    <label>الترتيب</label>
+                                    <input type="number" id="raceRank" placeholder="1, 2, 3...">
+                                </div>
+                            </div>
+                            <button type="button" onclick="addRaceToChampionship()" class="btn btn-primary full">➕ إضافة هذا السباق للقائمة</button>
+                        </div>
+
+                        <div id="currentChampionshipRaces"></div>
+                        <button type="button" onclick="saveChampionshipToSwimmer()" class="btn btn-primary full" id="btnSaveChamp" disabled>
+                            💾 حفظ البطولة مع جميع سباقاتها
+                        </button>
+
+                        <h4 class="saved-title">📋 البطولات المضافة لهذا السباح</h4>
+                        <div id="savedChampionships"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+                        <button type="button" onclick="closeModal()" class="btn btn-ghost">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
